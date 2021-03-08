@@ -76,7 +76,7 @@ def generateNoiseFromFile(shape, name):
     
     nm = np.array(nm).reshape(shape)
 
-    Image.fromarray(np.uint8(nm/3*255)).save("nm.png")
+    Image.fromarray(np.uint8(nm/3*255)).save("DataNoiseMap.png")
 
     return nm
 

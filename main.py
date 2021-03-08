@@ -1,17 +1,17 @@
 from PIL import Image
 import PIL
+import regex as re
 import numpy as np
 import os
 
 print("""
 
-
-░██████╗████████╗███████╗░██████╗░░█████╗░███╗░░██╗░█████╗░░██████╗░██████╗░░█████╗░██████╗░██╗░░██╗██╗░█████╗░░██████╗
-██╔════╝╚══██╔══╝██╔════╝██╔════╝░██╔══██╗████╗░██║██╔══██╗██╔════╝░██╔══██╗██╔══██╗██╔══██╗██║░░██║██║██╔══██╗██╔════╝
-╚█████╗░░░░██║░░░█████╗░░██║░░██╗░███████║██╔██╗██║██║░░██║██║░░██╗░██████╔╝███████║██████╔╝███████║██║██║░░╚═╝╚█████╗░
-░╚═══██╗░░░██║░░░██╔══╝░░██║░░╚██╗██╔══██║██║╚████║██║░░██║██║░░╚██╗██╔══██╗██╔══██║██╔═══╝░██╔══██║██║██║░░██╗░╚═══██╗
-██████╔╝░░░██║░░░███████╗╚██████╔╝██║░░██║██║░╚███║╚█████╔╝╚██████╔╝██║░░██║██║░░██║██║░░░░░██║░░██║██║╚█████╔╝██████╔╝
-╚═════╝░░░░╚═╝░░░╚══════╝░╚═════╝░╚═╝░░╚═╝╚═╝░░╚══╝░╚════╝░░╚═════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝░░╚═╝╚═╝░╚════╝░╚═════╝░ 
+██████╗░░█████╗░████████╗░█████╗░      ██╗░░██╗██╗██████╗░███████╗██████╗░
+██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗      ██║░░██║██║██╔══██╗██╔════╝██╔══██╗
+██║░░██║███████║░░░██║░░░███████║      ███████║██║██║░░██║█████╗░░██████╔╝
+██║░░██║██╔══██║░░░██║░░░██╔══██║      ██╔══██║██║██║░░██║██╔══╝░░██╔══██╗
+██████╔╝██║░░██║░░░██║░░░██║░░██║      ██║░░██║██║██████╔╝███████╗██║░░██║
+╚═════╝░╚═╝░░╚═╝░░░╚═╝░░░╚═╝░░╚═╝      ╚═╝░░╚═╝╚═╝╚═════╝░╚══════╝╚═╝░░╚═╝
 
 Type help for a list of commands""")
 
@@ -26,13 +26,13 @@ COMMANDS:
 3) capacity""")
     elif func == encode:
         print("""ENCODE FUNCTION
-The encode function takes an image and a text file, and outputs an image with the data imperceptibly encoded within the image.
+The encode function takes an image and a file, and outputs an image with the data imperceptibly encoded within the image.
 
 ARGS:
 1) Image file path. (eg samplefolder/sampleimage.jpg)
-2) Text data (must be .txt) file path (eg sampletext.txt)
+2) Path of data to be encoded
 3) (Optional) By default is the same as argument 1. Output file path (eg samplefolder/sampleimage.png). The extention must be an uncompressed format (eg bmp), or a lossless compression format (eg png)""")
-    elif func == getFilecapacityity:
+    elif func == getFileCapacity:
         print("""capacity FUNCTION
 This function calculates how many charectars can fit into one image
 
@@ -40,28 +40,18 @@ ARGS:
 1) Image file path (eg samplefolder/sampleimage.jpg)""")
     elif func == decode:
         print("""DECODE FUNCTION
-This function decodes the encoded images
+This function extracts the hidden data from the image and outputs it into a file
 
 ARGS:
 1) Image file path (eg samplefolder/sampleimage.jpg)""")
 
-def getFilecapacityity(image):
+def getFileCapacity(image):
     size = list(np.array(Image.open(image)).shape)
     size = size[0] * size[1] * size[2]//4
     return size
 
 def zeroLastTwoBinaryDigits(image):
-    result = []
-    countmax = len(image.reshape(1,-1)[0])
-    count = 0
-    for x in np.array(list(image.reshape(1,-1)[0])):
-        result.append(np.uint8(x-x%4))
-        count += 1
-        if count % int(countmax/100) == 0:
-            print("[" + "█"*int(count*40/countmax) + "-"*(40-int(count*40/countmax)) + "] " + str(int(count*100/countmax)) + "%",end="\r")
-    print("[████████████████████████████████████████] 100%")
-    
-    return np.array(result).reshape(image.shape)
+    return image - image % 4
 
 def generateNoiseFromFile(shape, name):
     datIn = open(name,"rb").read().hex()
@@ -91,40 +81,32 @@ def generateNoiseFromFile(shape, name):
     return nm
 
 def encode(image, data, output):
-    if getFilecapacityity(image) < os.path.getsize(data):
-        print("###ERROR### FILE TOO LARGE\nThe file", data, "(" + str(os.path.getsize(data)), "bytes) is bigger than",image + "'s max capacityity (" + str(getFilecapacityity(image)) + " bytes)")
+    if getFileCapacity(image) < os.path.getsize(data):
+        print("###ERROR### FILE TOO LARGE\nThe file", data, "(" + str(os.path.getsize(data)), "bytes) is bigger than",image + "'s max capacityity (" + str(getFileCapacity(image)) + " bytes)")
         return
 
     print("Preparing image for data...")
     im = zeroLastTwoBinaryDigits(np.array(Image.open(image)))
     print("Loading data...")
-    out = np.add(im,generateNoiseFromFile(im.shape, data))
+    out = np.add(im, generateNoiseFromFile(im.shape, data))
     print("Done. Saving...")
     out = Image.fromarray(out)
     out.save(output)
     print("Saved")
+
+def test(x):
+    return ["00", "01", "10", "11"][x]
 
 def decode(image, output):
     recover = np.array(Image.open(image))
     print("Extracting data from image...")
     recover = np.subtract(recover, zeroLastTwoBinaryDigits(recover)).reshape(1, -1)[0]
     print("Processing data...")
-    new = ""
-    count = 0
-    countmax = len(recover)
-    for x in recover:
-        if x in[2,3]:
-            new = new + bin(x)[2:]
-        else:
-            new = new + "0" + bin(x)[2:]
-        count += 1
-        if count % int(countmax/100) == 0:
-            print("[" + "█"*int(count*40/countmax) + "-"*(40-int(count*40/countmax)) + "] " + str(int(count*100/countmax)) + "%",end="\r")
-    recover = "".join(list(new))
+
+    recover = "".join(list(map(test, recover)))
     
-    print("[████████████████████████████████████████] 100%\nRemoving placeholder data...")
-    while recover.endswith("00000000"):
-        recover = recover[:-8]
+    print("Removing placeholder data...")
+    recover = re.sub("(00000000)+$", "", recover)
 
     print("Saving data as",output + " ...")
     output = open(output,"wb")
@@ -219,7 +201,7 @@ while True:
             verified_args = False
         else:
             if args[0] == "help":
-                give_help(getFilecapacityity)
+                give_help(getFileCapacity)
             else:
                 try:
                     Image.open(args[0])
@@ -230,7 +212,7 @@ while True:
                     print("###ERROR### IMAGE LOAD FAIL\n" + args[0], "is not an image. ")
                     verified_args = False
                 if verified_args:
-                    print("The file",args[0],"can fit",str(getFilecapacityity(args[0])),"bytes of data")
+                    print("The file",args[0],"can fit",str(getFileCapacity(args[0])),"bytes of data")
     elif main == "help":
         give_help(None)
     else:

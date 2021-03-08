@@ -94,16 +94,15 @@ def encode(image, data, output):
     out.save(output)
     print("Saved")
 
-def test(x):
-    return ["00", "01", "10", "11"][x]
-
 def decode(image, output):
     recover = np.array(Image.open(image))
     print("Extracting data from image...")
     recover = np.subtract(recover, zeroLastTwoBinaryDigits(recover)).reshape(1, -1)[0]
     print("Processing data...")
 
-    recover = "".join(list(map(test, recover)))
+    binaryMappings = lambda x : ["00", "01", "10", "11"][x]
+    
+    recover = "".join(list(map(binaryMappings, recover)))
     
     print("Removing placeholder data...")
     recover = re.sub("(00000000)+$", "", recover)
